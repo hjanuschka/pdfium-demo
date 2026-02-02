@@ -1,208 +1,210 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PDFium JXL-in-PDF Demo (Rust jxl-rs)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#121212" />
+  <title>PDFium + JPEG XL in PDF (Rust-only demo)</title>
+  <meta name="description" content="Demo artifacts for experimental JXL-in-PDF support in PDFium using the pure Rust decoder jxl-rs." />
+
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" fetchpriority="low" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"></noscript>
+
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     :root {
-      color-scheme: light dark;
-      --bg: #0b0f17;
-      --card: #121826;
-      --text: #e6e9ef;
-      --muted: #9aa4b2;
-      --accent: #7dd3fc;
-      --border: rgba(255,255,255,0.10);
-      --shadow: 0 10px 30px rgba(0,0,0,0.35);
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    }
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #f7f8fb;
-        --card: #ffffff;
-        --text: #0b1220;
-        --muted: #516072;
-        --accent: #0369a1;
-        --border: rgba(15,23,42,0.12);
-        --shadow: 0 12px 30px rgba(2,6,23,0.10);
-      }
+      --bg: #121212;
+      --bg-light: #1e1e1e;
+      --bg-lighter: #333333;
+      --text: #bebebe;
+      --text-dim: #8a8a8d;
+      --accent: #D35F5F;
+      --accent-dim: #b84a4a;
+      --border: #333333;
     }
 
     body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background: radial-gradient(1200px 900px at 20% 0%, rgba(125,211,252,0.18), transparent 60%),
-                  radial-gradient(900px 900px at 90% 20%, rgba(56,189,248,0.14), transparent 55%),
-                  var(--bg);
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+      background: var(--bg);
       color: var(--text);
+      line-height: 1.6;
+      font-size: 14px;
     }
 
-    header {
-      padding: 48px 18px 18px;
-      max-width: 1080px;
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-dim); text-decoration: underline; }
+
+    .container {
+      max-width: 1000px;
       margin: 0 auto;
+      padding: 0 20px;
     }
 
-    h1 {
-      margin: 0 0 12px;
-      font-size: 30px;
-      letter-spacing: -0.02em;
+    .terminal-window {
+      background: var(--bg);
+      border: 3px solid var(--accent);
+      border-radius: 12px;
+      margin: 20px 0;
     }
 
-    .lead {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.5;
-      max-width: 75ch;
+    .terminal-header {
+      background: var(--accent);
+      color: var(--bg);
+      padding: 12px 16px;
+      font-weight: 700;
+      border-radius: 9px 9px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .terminal-body {
+      padding: 16px;
+      background: var(--bg-light);
+      border-radius: 0 0 9px 9px;
     }
 
     .pill {
       display: inline-block;
-      padding: 6px 10px;
+      padding: 2px 8px;
       border: 1px solid var(--border);
       border-radius: 999px;
-      background: color-mix(in oklab, var(--card) 85%, transparent);
-      box-shadow: var(--shadow);
-      font-family: var(--mono);
+      background: var(--bg);
+      color: var(--text);
       font-size: 12px;
-      margin-top: 14px;
+      white-space: nowrap;
     }
 
-    main {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 18px;
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
+    .ascii-box {
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-light);
+      margin: 18px 0;
       overflow: hidden;
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
     }
 
-    .card img {
+    .ascii-box-header {
+      background: var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      font-weight: 700;
+    }
+
+    .ascii-box-content { padding: 14px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .thumb {
       width: 100%;
       height: auto;
       display: block;
-      background: repeating-linear-gradient(45deg, rgba(127,127,127,0.18) 0px, rgba(127,127,127,0.18) 10px, rgba(127,127,127,0.10) 10px, rgba(127,127,127,0.10) 20px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background:
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 20px);
     }
 
-    .card .body {
-      padding: 14px 14px 16px;
-      display: grid;
-      gap: 10px;
-    }
-
-    .title {
-      font-weight: 650;
-      letter-spacing: -0.01em;
-      margin: 0;
-    }
-
-    .meta {
-      margin: 0;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.4;
-    }
+    .meta { color: var(--text-dim); margin-top: 8px; }
 
     .actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      margin-top: 10px;
     }
 
-    a.btn {
+    .btn {
       display: inline-block;
-      text-decoration: none;
-      color: var(--text);
+      padding: 8px 10px;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 9px 10px;
-      background: color-mix(in oklab, var(--card) 70%, transparent);
-      font-size: 14px;
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      text-decoration: none;
     }
 
-    a.btn.primary {
-      border-color: color-mix(in oklab, var(--accent) 55%, var(--border));
-      box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent) inset;
-    }
+    .btn:hover { border-color: var(--accent); text-decoration: none; }
 
-    a.btn:hover {
-      transform: translateY(-1px);
-      transition: transform 120ms ease;
-    }
-
-    footer {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 10px 18px 40px;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-    footer code { font-family: var(--mono); }
+    .footer { margin: 26px 0 50px; color: var(--text-dim); }
+    code { color: var(--text); }
   </style>
 </head>
+
 <body>
-  <header>
-    <h1>PDFium + JPEG XL in PDF (Rust-only demo)</h1>
-    <p class="lead">
-      Prototype support for decoding <strong>JPEG XL (JXL)</strong> images embedded in <strong>PDF</strong> using the pure-Rust decoder <code>jxl-rs</code>, including alpha via <code>/SMask</code> and “frame 0 only” handling for animated JXL.
-    </p>
-    <div class="pill">/Filter /JXLDecode · Rust-only decoder · alpha via synthesized /SMask · animation → frame 0</div>
-  </header>
-
-  <main>
-    <section class="card">
-      <img src="assets/zoltan-jxldecode.pdf.0.png" alt="Rendered output: Zoltan photo" />
-      <div class="body">
-        <p class="title">Zoltan (RGB photo)</p>
-        <p class="meta">Large RGB image embedded as JXL in PDF and rendered by PDFium.</p>
-        <div class="actions">
-          <a class="btn primary" href="assets/zoltan-jxldecode.pdf">Download PDF</a>
-          <a class="btn" href="assets/zoltan-jxldecode.pdf.0.png">Rendered PNG</a>
+  <div class="container">
+    <div style="padding: 28px 0 8px;">
+      <div class="terminal-window">
+        <div class="terminal-header">
+          <div>PDFium + JPEG XL in PDF (Rust-only demo)</div>
+          <div class="pill">/Filter /JXLDecode · alpha→/SMask · animation→frame0</div>
+        </div>
+        <div class="terminal-body">
+          <p>
+            Prototype support for decoding <strong>JPEG XL (JXL)</strong> images embedded in <strong>PDF</strong>
+            using the pure Rust decoder <code>jxl-rs</code>.
+            These PDFs use the current bring-up filter name <code>/JXLDecode</code>.
+          </p>
+          <p class="meta" style="margin-top:10px;">
+            Note: transparency is visualized using a checkerboard background baked into the PDF content stream.
+          </p>
         </div>
       </div>
-    </section>
 
-    <section class="card">
-      <img src="assets/dice-jxldecode.pdf.0.png?v=2" alt="Rendered output: Dice (alpha)" />
-      <div class="body">
-        <p class="title">Dice (alpha)</p>
-        <p class="meta">RGBA JXL embedded in PDF. PDFium decodes alpha and synthesizes an <code>/SMask</code>. Background is a checkerboard to visualize transparency.</p>
-        <div class="actions">
-          <a class="btn primary" href="assets/dice-jxldecode.pdf?v=2">Download PDF</a>
-          <a class="btn" href="assets/dice-jxldecode.pdf.0.png?v=2">Rendered PNG</a>
+      <div class="ascii-box">
+        <div class="ascii-box-header">[demo artifacts]</div>
+        <div class="ascii-box-content">
+          <div class="grid">
+            <div>
+              <img class="thumb" src="assets/zoltan-jxldecode.pdf.0.png" alt="Rendered output: Zoltan" />
+              <p style="margin-top:10px;"><strong>Zoltan (RGB photo)</strong></p>
+              <p class="meta">Large RGB JXL embedded in PDF and rendered by PDFium.</p>
+              <div class="actions">
+                <a class="btn" href="assets/zoltan-jxldecode.pdf">PDF</a>
+                <a class="btn" href="assets/zoltan-jxldecode.pdf.0.png">Rendered PNG</a>
+              </div>
+            </div>
+
+            <div>
+              <img class="thumb" src="assets/dice-jxldecode.pdf.0.png?v=3" alt="Rendered output: Dice (alpha)" />
+              <p style="margin-top:10px;"><strong>Dice (alpha)</strong></p>
+              <p class="meta">RGBA JXL. PDFium synthesizes an <code>/SMask</code> and composites over checkerboard.</p>
+              <div class="actions">
+                <a class="btn" href="assets/dice-jxldecode.pdf?v=3">PDF</a>
+                <a class="btn" href="assets/dice-jxldecode.pdf.0.png?v=3">Rendered PNG</a>
+              </div>
+            </div>
+
+            <div>
+              <img class="thumb" src="assets/anim-icos-jxldecode.pdf.0.png?v=3" alt="Rendered output: anim-icos (frame 0)" />
+              <p style="margin-top:10px;"><strong>anim-icos (animated → frame 0)</strong></p>
+              <p class="meta">Animated RGBA JXL. PDFium decodes frame 0 only and composites over checkerboard.</p>
+              <div class="actions">
+                <a class="btn" href="assets/anim-icos-jxldecode.pdf?v=3">PDF</a>
+                <a class="btn" href="assets/anim-icos-jxldecode.pdf.0.png?v=3">Rendered PNG</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer">
+            Repo: <a href="https://github.com/hjanuschka/pdfium-demo">hjanuschka/pdfium-demo</a>
+          </div>
         </div>
       </div>
-    </section>
-
-    <section class="card">
-      <img src="assets/anim-icos-jxldecode.pdf.0.png?v=2" alt="Rendered output: Animated icons (frame 0)" />
-      <div class="body">
-        <p class="title">anim-icos (animated JXL → frame 0)</p>
-        <p class="meta">Animated RGBA JXL embedded in PDF. PDFium renders only the first frame (checkerboard background included).</p>
-        <div class="actions">
-          <a class="btn primary" href="assets/anim-icos-jxldecode.pdf?v=2">Download PDF</a>
-          <a class="btn" href="assets/anim-icos-jxldecode.pdf.0.png?v=2">Rendered PNG</a>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <p>
-      Build note: this demo corresponds to a local PDFium build with <code>pdf_enable_rust_jxl=true</code> and a Rust toolchain available.
-      The filter name <code>/JXLDecode</code> is used as a bring-up placeholder while the spec is evolving.
-    </p>
-  </footer>
+    </div>
+  </div>
 </body>
 </html>
