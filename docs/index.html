@@ -153,12 +153,9 @@
 </head>
 <body>
   <header>
-    <h1>PDFium JXL-in-PDF Demo (Rust <code>jxl-rs</code>)</h1>
+    <h1>PDFium + JPEG XL in PDF (Rust-only demo)</h1>
     <p class="lead">
-      Demo artifacts for a bring-up implementation that adds <strong>JPEG XL</strong> image decoding to <strong>PDFium</strong>
-      using the Rust decoder <code>jxl-rs</code>. This repo contains sample PDFs that embed JXL image XObjects using the
-      (draft/leader) filter name <code>/JXLDecode</code>, plus the rendered PNG outputs produced by <code>pdfium_test</code>.
-      Animated JXL is rendered as <strong>frame 0 only</strong>.
+      Prototype support for decoding <strong>JPEG XL (JXL)</strong> images embedded in <strong>PDF</strong> using the pure-Rust decoder <code>jxl-rs</code>, including alpha via <code>/SMask</code> and “frame 0 only” handling for animated JXL.
     </p>
     <div class="pill">/Filter /JXLDecode · Rust-only decoder · alpha via synthesized /SMask · animation → frame 0</div>
   </header>
